@@ -1,8 +1,10 @@
-const nodeSemver = require('semver');
-const { Semver, SemverRange } = require('./sver');
+var nodeSemver = require('semver');
+var sver = require('./sver');
+var Semver = sver.Semver;
+var SemverRange = sver.SemverRange;
 
 module.exports = function nodeRangeToSemverRange (range) {
-  let parsed = nodeSemver.validRange(range);
+  var parsed = nodeSemver.validRange(range);
 
   // tag version
   if (!parsed)
@@ -12,7 +14,7 @@ module.exports = function nodeRangeToSemverRange (range) {
     return new SemverRange(parsed);
 
   try {
-    let semverRange = new SemverRange(range);
+    var semverRange = new SemverRange(range);
     if (!semverRange.version.tag)
       return semverRange;
   }
@@ -21,30 +23,34 @@ module.exports = function nodeRangeToSemverRange (range) {
       throw e;
   }
 
-  let outRange;
-  for (let union of parsed.split('||')) {
+  var outRange;
+  var parsedSplit = parsed.split('||');
+  for (var splitIdx in parsedSplit) {
+    var union = parsedSplit[splitIdx];
 
     // compute the intersection into a lowest upper bound and a highest lower bound
-    let upperBound, lowerBound, upperEq, lowerEq;
-    for (let intersection of union.split(' ')) {
-      let lt = intersection[0] === '<';
-      let gt = intersection[0] === '>';
+    var upperBound, lowerBound, upperEq, lowerEq;
+    var unionSplit = union.split(' ');
+    for (var unionIdx in unionSplit) {
+      var intersection = unionSplit[unionIdx];
+      var lt = intersection[0] === '<';
+      var gt = intersection[0] === '>';
       if (!lt && !gt) {
         upperBound = intersection;
         upperEq = true;
         break;
       }
-      let eq = intersection[1] === '=';
+      var eq = intersection[1] === '=';
       if (!gt) {
-        let version = new Semver(intersection.substr(1 + eq));
+        var version = new Semver(intersection.substr(1 + eq));
         if (!upperBound || upperBound.gt(version)) {
           upperBound = version;
           upperEq = eq;
         }
       }
       else if (!lt) {
-        let eq = intersection[1] === '=';
-        let version = new Semver(intersection.substr(1 + eq));
+        var eq = intersection[1] === '=';
+        var version = new Semver(intersection.substr(1 + eq));
         if (!lowerBound || lowerBound.lt(version)) {
           lowerBound = version;
           lowerEq = eq;
@@ -54,7 +60,7 @@ module.exports = function nodeRangeToSemverRange (range) {
 
     // if the lower bound is greater than the upper bound then just return the lower bound exactly
     if (lowerBound && upperBound && lowerBound.gt(upperBound)) {
-      let curRange = new SemverRange(lowerBound.toString());
+      var curRange = new SemverRange(lowerBound.toString());
       // the largest or highest union range wins
       if (!outRange || !outRange.contains(curRange) && (curRange.gt(outRange) || curRange.contains(outRange)))
         outRange = curRange;
@@ -62,11 +68,11 @@ module.exports = function nodeRangeToSemverRange (range) {
     }
 
     // determine the largest semver range satisfying the upper bound
-    let upperRange;
+    var upperRange;
     if (upperBound) {
       // if the upper bound has an equality then we return it directly
       if (upperEq) {
-        let curRange = new SemverRange(upperBound.toString());
+        var curRange = new SemverRange(upperBound.toString());
         // the largest or highest union range wins
         if (!outRange || !outRange.contains(curRange) && (curRange.gt(outRange) || curRange.contains(outRange)))
           outRange = curRange;
@@ -74,7 +80,7 @@ module.exports = function nodeRangeToSemverRange (range) {
       }
 
       // prerelease ignored in upper bound
-      let major = 0, minor = 0, patch = 0, rangeType = '';
+      var major = 0, minor = 0, patch = 0, rangeType = '';
 
       // <2.0.0 -> ^1.0.0
       if (upperBound.patch === 0) {
@@ -103,20 +109,22 @@ module.exports = function nodeRangeToSemverRange (range) {
     }
 
     // determine the lower range semver range
-    let lowerRange;
+    var lowerRange;
+    console.log(lowerEq)
     if (!lowerEq) {
       if (lowerBound.pre)
-        lowerRange = new SemverRange('^' + lowerBound.major + '.' + lowerBound.minor + '.' + lowerBound.patch + '-' + [...lowerBound.pre, 1].join('.'));
+        lowerRange = new SemverRange('^' + lowerBound.major + '.' + lowerBound.minor + '.' + lowerBound.patch + '-' + lowerBound.pre.join('.') + '.1');
       else
         lowerRange = new SemverRange('^' + lowerBound.major + '.' + lowerBound.minor + '.' + (lowerBound.patch + 1));
     }
     else {
       lowerRange = new SemverRange('^' + lowerBound.toString());
     }
+    console.log(lowerRange.intersect(upperRange), lowerRange.toString());
 
     // we then intersect the upper semver range with the lower semver range
     // if the intersection is empty, we return the upper range only
-    let curRange = upperRange ? lowerRange.intersect(upperRange) || upperRange : lowerRange;
+    var curRange = upperRange ? lowerRange.intersect(upperRange) || upperRange : lowerRange;
 
     // the largest or highest union range wins
     if (!outRange || !outRange.contains(curRange) && (curRange.gt(outRange) || curRange.contains(outRange)))
