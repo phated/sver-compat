@@ -1,6 +1,6 @@
 {
   "name": "sver-compat",
-  "version": "1.3.5",
+  "version": "1.5.0",
   "description": "Simple Semver and SemverRange classes",
   "main": "sver.js",
   "scripts": {

@@ -186,6 +186,7 @@ function SemverRange(versionRange) {
       else
         this[TYPE] = STABLE_RANGE;
     }
+      // empty pre array === support prerelease ranges
     this[VERSION][PRE] = this[VERSION][PRE] || [];
   }
   else if (versionRange[0] === '^') {
@@ -354,8 +355,10 @@ SemverRange.prototype.toString = function toString () {
     case WILDCARD_RANGE:
       return '*';
     case MAJOR_RANGE:
+      if (version[MAJOR] === 0 && version[MINOR] === 0 && version[PATCH] === 0)
+         return '0';
       if (version[PRE] && version[PRE].length === 0 && version[PATCH] === 0)
-        return '^' + version[MAJOR] + '.' + version[MINOR];
+         return '^' + version[MAJOR] + '.' + version[MINOR];
       return '^' + version.toString();
     case STABLE_RANGE:
       if (version[PRE] && version[PRE].length === 0 && version[PATCH] === 0)
