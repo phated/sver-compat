@@ -1,24 +1,23 @@
-# Sver
+# sver-compat
 
-[![Build Status](https://travis-ci.org/guybedford/sver.svg?branch=master)](https://travis-ci.org/guybedford/sver)
+[![Build Status](https://travis-ci.org/phated/sver-compat.svg?branch=master)](https://travis-ci.org/phated/sver-compat)
 
-Another Semver utility library. Supports NodeJS 6+ only. No maintenance guarantees.
-
-This is the semver library used by jspm.
+Fork of @guybedford's [Sver](https://github.com/guybedford/sver) library. Adds compatibility for node <6.
 
 ```
-npm install sver
+npm install sver-compat
 ```
 
 ```js
-const { Semver, SemverRange } = require('sver');
+var Semver = require('sver-compat').Semver;
+var SemverRange = require('sver-compat').SemverRange;
 
 // Static usage:
 SemverRange.match('^1.2.3', '1.2.4'); // true
 
 // Class usage:
-let range = new SemverRange('^1.2.3');
-let version = new Semver('1.2.4');
+var range = new SemverRange('^1.2.3');
+var version = new Semver('1.2.4');
 version.matches(range);               // true
 range.has(version);                   // true
 ```
@@ -50,21 +49,21 @@ SemverRange.match('^1.2.3', '1.5.6-beta', true); // true
 ### Best Version Match
 
 ```js
-let versions = ['1.2.3', '1.3.4-alpha', '1.3.4-alpha.1', '1.3.4-beta'];
-let range = new SemverRange('*');
+var versions = ['1.2.3', '1.3.4-alpha', '1.3.4-alpha.1', '1.3.4-beta'];
+var range = new SemverRange('*');
 
-let bestStableMatch = range.bestMatch(versions);
+var bestStableMatch = range.bestMatch(versions);
 bestStableMatch.toString();                     // 1.2.3
 
-let bestUnstableMatch = range.bestMatch(versions, true);
+var bestUnstableMatch = range.bestMatch(versions, true);
 bestUnstableMatch.toString();                   // 1.3.4-beta
 ```
 
 ### Version and Range Sorting
 
 ```js
-let versions = ['2.4.5', '2.3.4-alpha', '1.2.3', '2.3.4-alpha.2'];
-let ranges = ['^1.2.3', '1.2', '2.3.4'];
+var versions = ['2.4.5', '2.3.4-alpha', '1.2.3', '2.3.4-alpha.2'];
+var ranges = ['^1.2.3', '1.2', '2.3.4'];
 
 versions.sort(Semver.compare);   // [1.2.3, 2.3.4-alpha, 2.3.4-alpha.2, 2.4.5]
 ranges.sort(SemverRange.compare) // [1.2, ^1.2.3, 2.3.4]
@@ -79,7 +78,7 @@ This requires `semver` to be installed in the application running this process.
 _Note this conversion is lossy by definition._
 
 ```js
-const convertRange = require('sver/convert-range');
+var convertRange = require('sver-compat/convert-range');
 
 convertRange('>=2.3.4 <3.0.0').toString(); // ^2.3.4
 convertRange('1 || 2 || 3').toString();    // ^3.0.0
@@ -92,7 +91,7 @@ When a version string fails semver validation it falls back to being treated as 
 For example:
 
 ```js
-let version = new Semver('x.y.z');
+var version = new Semver('x.y.z');
 version.tag === 'x.y.z';             // true
 
 version = new Semver('^1.2.3');
