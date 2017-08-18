@@ -2,6 +2,7 @@ var nodeSemver = require('semver');
 var sver = require('./sver');
 var Semver = sver.Semver;
 var SemverRange = sver.SemverRange;
+var forOf = require('es6-iterator/for-of');
 
 module.exports = function nodeRangeToSemverRange (range) {
   var parsed = nodeSemver.validRange(range);
@@ -24,21 +25,17 @@ module.exports = function nodeRangeToSemverRange (range) {
   }
 
   var outRange;
-  var parsedSplit = parsed.split('||');
-  for (var splitIdx in parsedSplit) {
-    var union = parsedSplit[splitIdx];
+  forOf(parsed.split('||'), function(union) {
 
     // compute the intersection into a lowest upper bound and a highest lower bound
     var upperBound, lowerBound, upperEq, lowerEq;
-    var unionSplit = union.split(' ');
-    for (var unionIdx in unionSplit) {
-      var intersection = unionSplit[unionIdx];
+    forOf(union.split(' '), function(intersection, doBreak) {
       var lt = intersection[0] === '<';
       var gt = intersection[0] === '>';
       if (!lt && !gt) {
         upperBound = intersection;
         upperEq = true;
-        break;
+        return doBreak();
       }
       var eq = intersection[1] === '=';
       if (!gt) {
@@ -56,7 +53,7 @@ module.exports = function nodeRangeToSemverRange (range) {
           lowerEq = eq;
         }
       }
-    }
+    });
 
     // if the lower bound is greater than the upper bound then just return the lower bound exactly
     if (lowerBound && upperBound && lowerBound.gt(upperBound)) {
@@ -64,7 +61,7 @@ module.exports = function nodeRangeToSemverRange (range) {
       // the largest or highest union range wins
       if (!outRange || !outRange.contains(curRange) && (curRange.gt(outRange) || curRange.contains(outRange)))
         outRange = curRange;
-      continue;
+      return;
     }
 
     // determine the largest semver range satisfying the upper bound
@@ -76,7 +73,7 @@ module.exports = function nodeRangeToSemverRange (range) {
         // the largest or highest union range wins
         if (!outRange || !outRange.contains(curRange) && (curRange.gt(outRange) || curRange.contains(outRange)))
           outRange = curRange;
-        continue;
+        return;
       }
 
       // prerelease ignored in upper bound
@@ -110,7 +107,6 @@ module.exports = function nodeRangeToSemverRange (range) {
 
     // determine the lower range semver range
     var lowerRange;
-    console.log(lowerEq)
     if (!lowerEq) {
       if (lowerBound.pre)
         lowerRange = new SemverRange('^' + lowerBound.major + '.' + lowerBound.minor + '.' + lowerBound.patch + '-' + lowerBound.pre.join('.') + '.1');
@@ -120,7 +116,6 @@ module.exports = function nodeRangeToSemverRange (range) {
     else {
       lowerRange = new SemverRange('^' + lowerBound.toString());
     }
-    console.log(lowerRange.intersect(upperRange), lowerRange.toString());
 
     // we then intersect the upper semver range with the lower semver range
     // if the intersection is empty, we return the upper range only
@@ -129,6 +124,6 @@ module.exports = function nodeRangeToSemverRange (range) {
     // the largest or highest union range wins
     if (!outRange || !outRange.contains(curRange) && (curRange.gt(outRange) || curRange.contains(outRange)))
       outRange = curRange;
-  }
+  });
   return outRange;
 }
